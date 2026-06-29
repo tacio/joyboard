@@ -45,18 +45,33 @@ Key building blocks:
 - **`get_button(pressed_buttons)`** maps the first pressed entry in the raw button list to a
   label (`A`, `B`, ... `M`) by index. Index order is the pygame button order for the controller.
 
-The main loop (60 fps via `pygame.time.Clock`): the **right stick** moves the cursor (arrow
-keys); when the right stick is neutral, a face button + **left stick** direction looks up a
-character in `LAYER_DIR_LETTER_MAP`. Neutral-left-stick keys are sent with `keyboard.send`
-(named keys), others are typed with `keyboard.write`. Repeated identical keys sleep longer
-(0.3s vs 0.1s) to debounce held inputs.
+- **`process_frame(controller, key_map, output)`** runs one polling frame and returns
+  `("cursor", None)`, `("key", char)`, or `("idle", None)`. The **right stick** moves the
+  cursor (arrow keys); when it's neutral, a face button + **left stick** direction looks up a
+  character in `key_map`. Neutral-left-stick keys are sent with `output.send` (named keys),
+  others typed with `output.write`. `output` is anything with `.send`/`.write` — the `keyboard`
+  module in production.
+- **`run_loop(controller, key_map, output=keyboard, *, sleep, tick, poll_events, should_continue)`**
+  is the polling loop, with all side-effecting collaborators injected (production defaults make
+  the real path unchanged). It owns `prev_key` and the debounce: repeated identical keys sleep
+  longer (0.3s vs 0.1s); cursor frames always sleep 0.1s and never touch `prev_key`. QUIT (from
+  `poll_events`) stops it. The `__main__` block is thin wiring: build the key map and call
+  `run_loop(..., tick=lambda: clock.tick(60))` (60 fps).
 
 ## Testing notes
 
-`pygame` and `keyboard` *are* installed in the synced environment, but `tests/test_main.py`
-still mocks both via `sys.modules[...] = MagicMock()` *before* `from joyboard import main`, so
-the module-level imports resolve without a real controller/display. Any new test module that
-imports `main` must do the same mock setup first, or the import will fail. Tests cover the pure
-functions only — the main loop is not exercised.
+`pygame` and `keyboard` *are* installed in the synced environment, but the tests mock both via
+`sys.modules[...] = MagicMock()` *before* `from joyboard import main`, so the module-level
+imports resolve without a real controller/display. `tests/test_main.py` does this inline; any
+other test module that imports `main` must do the same — or just import `tests/harness.py`,
+which centralizes the mock guard.
+
+`tests/test_main.py` covers the pure functions (`load_key_map`, `get_direction`, `get_button`).
+`tests/test_loop.py` exercises the full `run_loop`/`process_frame` path using the harness in
+`tests/harness.py`: a `VirtualClock` (sleep advances virtual time, no real delay), a
+`ScriptedController` driven by a `Hold(t0, t1, left=, right=, button=)` timeline with explicit
+press/release timestamps, and a `KeyboardRecorder` capturing `(time, "send"/"write", key)`.
+Author a test with `run_scripted([...holds])` and assert the returned timed keystroke list —
+this is how debounce/repeat timing is verified deterministically.
 
 The package version is static in `pyproject.toml` (`project.version`).

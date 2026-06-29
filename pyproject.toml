@@ -48,7 +48,8 @@ module-root = "src"
 src = ["src", "tests"]
 
 [tool.ty.environment]
-root = ["./src"]
+# ./src so `joyboard` resolves; "." so test modules can import the `tests` package.
+root = ["./src", "."]
 
 [tool.coverage.run]
 source_pkgs = ["joyboard", "tests"]
