@@ -11,6 +11,7 @@
 - [Installation](#installation)
 - [Usage](#usage)
 - [Controls](#controls)
+- [Roadmap](#roadmap)
 - [License](#license)
 
 ## Purpose
@@ -78,6 +79,12 @@ Special actions are mapped to face buttons when the left stick is in the neutral
 | **X** | enter |
 | **Y** | tab |
 
+
+## Roadmap
+
+joyboard is still early (lowercase letters and some punctuation today), with much more planned —
+a fuller character set, configurable layouts, CI, and an ecosystem around it. See
+[ROADMAP.md](ROADMAP.md) for where the project is headed.
 
 ## License
 
