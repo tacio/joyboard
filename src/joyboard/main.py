@@ -3,8 +3,6 @@ from time import sleep
 import keyboard
 import pygame
 
-LAYER_DIR_LETTER_MAP = {}
-
 
 def load_key_map():
     DIRECTION_BUTTON_TABLE = """
@@ -95,6 +93,73 @@ def get_button(pressed_buttons):
             return "M"
 
 
+CURSOR_ARROWS = {"N": "up", "E": "right", "S": "down", "W": "left"}
+
+
+def process_frame(controller, key_map, output):
+    """Run one frame of input handling, emitting keystrokes via output.
+
+    output must expose .send(key) and .write(key) (the keyboard module does).
+    Returns one of:
+      ("cursor", None) - right stick moved (an arrow may have been sent)
+      ("key", key)     - a character/special key was emitted for a button press
+      ("idle", None)   - nothing happened this frame
+    """
+    move_cursor = get_direction(controller, "R")
+    if move_cursor != "X":
+        arrow = CURSOR_ARROWS.get(move_cursor)
+        if arrow is not None:
+            output.send(arrow)
+        return ("cursor", None)
+
+    raw_button_input = [
+        controller.get_button(i) for i in range(controller.get_numbuttons())
+    ]
+    if any(raw_button_input):
+        button = get_button(raw_button_input)
+        direction = get_direction(controller, "L")
+        key = key_map[(direction, button)]
+        if direction == "X":
+            output.send(key)
+        else:
+            output.write(key)
+        return ("key", key)
+
+    return ("idle", None)
+
+
+def run_loop(
+    controller,
+    key_map,
+    output=keyboard,
+    *,
+    sleep=sleep,
+    tick=None,
+    poll_events=pygame.event.get,
+    should_continue=None,
+):
+    """Poll the controller and emit keystrokes until QUIT or should_continue()."""
+    prev_key = None
+    running = True
+    while running:
+        for event in poll_events():
+            if event.type == pygame.QUIT:
+                running = False
+
+        kind, key = process_frame(controller, key_map, output)
+        if kind == "cursor":
+            sleep(0.1)
+        elif kind == "key":
+            sleep(0.3 if prev_key == key else 0.1)
+            prev_key = key
+
+        if tick is not None:
+            tick()
+
+        if should_continue is not None and not should_continue():
+            running = False
+
+
 if __name__ == "__main__":
     pygame.init()
 
@@ -102,55 +167,10 @@ if __name__ == "__main__":
     controller.init()
     clock = pygame.time.Clock()
 
-    LAYER_DIR_LETTER_MAP = load_key_map()
-    prev_key = None
+    key_map = load_key_map()
 
     try:
-        running = True
-        while running:
-            a_button = 0
-
-            # Check for events
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-
-            move_cursor = get_direction(controller, "R")
-            if move_cursor != "X":
-                match move_cursor:
-                    case "N":
-                        keyboard.send("up")
-                    case "E":
-                        keyboard.send("right")
-                    case "S":
-                        keyboard.send("down")
-                    case "W":
-                        keyboard.send("left")
-                sleep(0.1)
-
-            else:
-                raw_buttom_input = [
-                    controller.get_button(i) for i in range(controller.get_numbuttons())
-                ]
-                if any(raw_buttom_input):
-                    buttom = get_button(raw_buttom_input)
-                    direction = get_direction(controller, "L")
-                    # print(direction, buttom)
-                    if direction == "X":
-                        key = LAYER_DIR_LETTER_MAP[(direction, buttom)]
-                        keyboard.send(key)
-                    else:
-                        key = LAYER_DIR_LETTER_MAP[(direction, buttom)]
-                        keyboard.write(key)
-
-                    if prev_key == key:
-                        sleep(0.3)
-                    else:
-                        sleep(0.1)
-                    prev_key = key
-
-            clock.tick(60)
-
+        run_loop(controller, key_map, tick=lambda: clock.tick(60))
     finally:
         # Clean up
         print(">> cleaning up")
