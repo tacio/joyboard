@@ -6,13 +6,15 @@ from unittest.mock import MagicMock
 sys.modules["pygame"] = MagicMock()
 sys.modules["keyboard"] = MagicMock()
 
-from src.joyboard import main
+from joyboard import main
+
 
 def test_load_key_map():
     key_map = main.load_key_map()
     assert key_map[("X", "A")] == "space"
     assert key_map[("N", "A")] == "a"
     assert key_map[("SW", "Y")] == "!"
+
 
 @pytest.mark.parametrize(
     "x_axis, y_axis, expected_direction",
@@ -42,6 +44,7 @@ def test_get_direction(x_axis, y_axis, expected_direction):
 
     mock_controller.get_axis.side_effect = get_axis_side_effect
     assert main.get_direction(mock_controller, "L") == expected_direction
+
 
 @pytest.mark.parametrize(
     "button_index, expected_button",
