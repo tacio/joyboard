@@ -1,10 +1,10 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["uv_build>=0.8.17"]
+build-backend = "uv_build"
 
 [project]
 name = "joyboard"
-dynamic = ["version"]
+version = "0.0.1"
 description = 'Write text from a joypad'
 readme = "README.md"
 requires-python = ">=3.10"
@@ -32,35 +32,23 @@ Documentation = "https://github.com/tacio/joyboard#readme"
 Issues = "https://github.com/tacio/joyboard/issues"
 Source = "https://github.com/tacio/joyboard"
 
-[tool.hatch.version]
-path = "src/joyboard/__about__.py"
-
-[tool.hatch.envs.default]
-dependencies = [
-  "coverage[toml]>=6.5",
+[dependency-groups]
+dev = [
   "pytest",
-]
-[tool.hatch.envs.default.scripts]
-test = "pytest {args:tests}"
-test-cov = "coverage run -m pytest {args:tests}"
-cov-report = [
-  "- coverage combine",
-  "coverage report",
-]
-cov = [
-  "test-cov",
-  "cov-report",
+  "coverage[toml]>=6.5",
+  "ruff",
+  "ty",
 ]
 
-[[tool.hatch.envs.all.matrix]]
-python = ["3.10", "3.11", "3.12"]
+[tool.uv.build-backend]
+module-name = "joyboard"
+module-root = "src"
 
-[tool.hatch.envs.types]
-dependencies = [
-  "mypy>=1.0.0",
-]
-[tool.hatch.envs.types.scripts]
-check = "mypy --install-types --non-interactive {args:src/joyboard tests}"
+[tool.ruff]
+src = ["src", "tests"]
+
+[tool.ty.environment]
+root = ["./src"]
 
 [tool.coverage.run]
 source_pkgs = ["joyboard", "tests"]
