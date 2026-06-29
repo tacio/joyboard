@@ -54,9 +54,6 @@ root = ["./src"]
 source_pkgs = ["joyboard", "tests"]
 branch = true
 parallel = true
-omit = [
-  "src/joyboard/__about__.py",
-]
 
 [tool.coverage.paths]
 joyboard = ["src/joyboard", "*/joyboard/src/joyboard"]

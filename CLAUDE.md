@@ -59,5 +59,4 @@ the module-level imports resolve without a real controller/display. Any new test
 imports `main` must do the same mock setup first, or the import will fail. Tests cover the pure
 functions only — the main loop is not exercised.
 
-The package version is static in `pyproject.toml` (`project.version`). `src/joyboard/__about__.py`
-still carries a `__version__` constant but is no longer wired into the build.
+The package version is static in `pyproject.toml` (`project.version`).
